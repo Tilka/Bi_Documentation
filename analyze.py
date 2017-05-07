@@ -47,9 +47,13 @@ def analyze_FRAG(d):
     d = analyze_chunk(d, ['MBS2'])
     assert(d == '')
 
+mbs2_version = 0
+
 def analyze_MBS2(d):
+    global mbs2_version
     s, u = decode(d)
-    assert(u[0] == 0x12) # ???
+    mbs2_version = u[0]
+    dump(d[:1*4])
     d = analyze_chunk(d[1*4:], ['VEHW'])
     d = analyze_chunk(d, ['CCOM', 'CVER', 'CFRA'])
     assert(d == '')
@@ -86,9 +90,8 @@ def analyze_CMMN(d):
         d = analyze_chunk(d, ['SSYM'])
     d = analyze_chunk(d, ['UBUF'])
     s, u = decode(d)
-    assert(u[0] == 1) # ???
-    d = analyze_chunk(d[1*4:], ['EBIN'])
-    assert(d == '')
+    count = analyze_chunks(d[1*4:], ['EBIN'])
+    assert(count == u[0])
 
 def analyze_VELA(d):
     s, u = decode(d)
@@ -204,7 +207,7 @@ def analyze_EBIN(d):
     dump(d[:4*4])
     assert(u[0] == 0) # ???
     assert(u[1] == 0xffffffff) # ???
-    rloc_count = u[2] # need to verify this
+    rloc_count = u[2]
     assert(u[3] == 0) # ???
     d = d[4*4:]
     for i in range(rloc_count):
@@ -212,9 +215,20 @@ def analyze_EBIN(d):
     s, u = decode(d)
     assert(u[0] == 0xffffffff) # ???
     d = analyze_chunk(d[1*4:], ['FSHA'])
+    if mbs2_version == 13:
+        d = analyze_chunk(d, ['STRI'])
     d = analyze_chunk(d, ['BFRE'])
     d = analyze_chunk(d, ['OBJC'])
     assert(d == '')
+
+def analyze_OBJC(d):
+    s, u = decode(d)
+    for i in range(len(s) // 4 + 1):
+        line = ''
+        for j in range(len(s[4*i:4*i + 4])):
+            idx = 4 * i + j
+            line += hexlify(s[idx]) + ' '
+        p(line)
 
 def analyze_FSHA(d):
     s, u = decode(d)
@@ -224,9 +238,10 @@ def analyze_FSHA(d):
     assert(u[1] == 0) # ???
 
 def analyze_BFRE(d):
-    s, u = decode(d)
-    assert(u[0] == 0) # ???
-    d = analyze_chunk(d[1*4:], ['SPDc', 'SPDv', 'SPDf'])
+    if mbs2_version == 18:
+        dump(d[:1*4])
+        d = d[1*4:]
+    d = analyze_chunk(d, ['SPDc', 'SPDv', 'SPDf'])
     assert(d == '')
 
 # something compute
@@ -234,7 +249,6 @@ def analyze_SPDc(d):
     s, u = decode(d)
     dump(d)
     assert(len(u) == 1)
-    assert(u[0] == 0)
 
 # something vertex
 def analyze_SPDv(d):
@@ -305,10 +319,13 @@ def analyze_chunks(d, expected):
 
 
 if __name__ == '__main__':
-    with open(argv[1], 'rb') as f:
+    path = argv[1]
+    with open(path, 'rb') as f:
         d = f.read()
-    d = ''.join(d.split('\n'))
-    d = unhexlify(d)
-    s, u = decode(d)
-    d = analyze_chunk(d, ['MPB1'])
+    if path.endswith('.hex'):
+        d = ''.join(d.split('\n'))
+        d = unhexlify(d)
+        d = analyze_chunk(d, ['MPB1'])
+    else:
+        d = analyze_chunk(d, ['MBS2'])
     assert(d == '')
