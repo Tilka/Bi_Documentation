@@ -30,21 +30,21 @@ def analyze_MPB1(d):
     dump(d[:2*4])
     assert(u[0] == 2) # ???
     assert(u[1] == 0) # ???
-    analyze_chunks(d[2*4:], ['COMP', 'VERT', 'FRAG', 'GEOM', 'CTRL', 'EVAL', 'BATT'])
+    analyze_blocks(d[2*4:], ['COMP', 'VERT', 'FRAG', 'GEOM', 'CTRL', 'EVAL', 'BATT'])
 
 # compute shader
 def analyze_COMP(d):
-    d = analyze_chunk(d, ['MBS2'])
+    d = analyze_block(d, ['MBS2'])
     assert(d == '')
 
 # vertex shader
 def analyze_VERT(d):
-    d = analyze_chunk(d, ['MBS2'])
+    d = analyze_block(d, ['MBS2'])
     assert(d == '')
 
 # fragment shader
 def analyze_FRAG(d):
-    d = analyze_chunk(d, ['MBS2'])
+    d = analyze_block(d, ['MBS2'])
     assert(d == '')
 
 mbs2_version = 0
@@ -54,8 +54,8 @@ def analyze_MBS2(d):
     s, u = decode(d)
     mbs2_version = u[0]
     dump(d[:1*4])
-    d = analyze_chunk(d[1*4:], ['VEHW'])
-    d = analyze_chunk(d, ['CCOM', 'CVER', 'CFRA'])
+    d = analyze_block(d[1*4:], ['VEHW'])
+    d = analyze_block(d, ['CCOM', 'CVER', 'CFRA'])
     assert(d == '')
 
 # hardware version?
@@ -69,28 +69,28 @@ def analyze_VEHW(d):
 
 # something compute
 def analyze_CCOM(d):
-    d = analyze_chunk(d, ['CMMN'])
-    d = analyze_chunk(d, ['KERN'])
+    d = analyze_block(d, ['CMMN'])
+    d = analyze_block(d, ['KERN'])
     assert(d == '')
 
 # something vertex
 def analyze_CVER(d):
-    d = analyze_chunk(d, ['CMMN'])
+    d = analyze_block(d, ['CMMN'])
     assert(d == '')
 
 # something fragment
 def analyze_CFRA(d):
-    d = analyze_chunk(d, ['CMMN'])
+    d = analyze_block(d, ['CMMN'])
     assert(d == '')
 
 def analyze_CMMN(d):
-    d = analyze_chunk(d, ['VELA'])
+    d = analyze_block(d, ['VELA'])
     # inputs, outputs, uniforms, ???, ???, ???
     for i in range(6):
-        d = analyze_chunk(d, ['SSYM'])
-    d = analyze_chunk(d, ['UBUF'])
+        d = analyze_block(d, ['SSYM'])
+    d = analyze_block(d, ['UBUF'])
     s, u = decode(d)
-    count = analyze_chunks(d[1*4:], ['EBIN'])
+    count = analyze_blocks(d[1*4:], ['EBIN'])
     assert(count == u[0])
 
 def analyze_VELA(d):
@@ -101,12 +101,12 @@ def analyze_VELA(d):
 
 def analyze_SSYM(d):
     s, u = decode(d)
-    count = analyze_chunks(d[1*4:], ['SYMB'])
+    count = analyze_blocks(d[1*4:], ['SYMB'])
     assert(count == u[0])
 
 # symbol
 def analyze_SYMB(d):
-    d = analyze_chunk(d, ['STRI'])
+    d = analyze_block(d, ['STRI'])
     s, u = decode(d)
     dump(d[:4*4])
     binding = u[3] & 0xffff
@@ -115,12 +115,12 @@ def analyze_SYMB(d):
         p('layout(binding = %u)' % binding)
     if location != 0xffff:
         p('layout(location = %u)' % location)
-    d = analyze_chunk(d[4*4:], ['TYPE'])
+    d = analyze_block(d[4*4:], ['TYPE'])
     s, u = decode(d)
     rloc_count = u[0]
     d = d[1*4:]
     for i in range(rloc_count):
-        d = analyze_chunk(d, ['RLOC'])
+        d = analyze_block(d, ['RLOC'])
     s, u = decode(d)
     assert(len(u) == 1)
     assert(u[0] == 0) # ???
@@ -130,7 +130,7 @@ def analyze_STRI(d):
     p(d.strip('\x00'))
 
 def analyze_TYPE(d):
-    d = analyze_chunk(d, ['TPGE', 'TPMA', 'TPAR', 'TPST', 'TPIB'])
+    d = analyze_block(d, ['TPGE', 'TPMA', 'TPAR', 'TPST', 'TPIB'])
     assert(d == '')
 
 # basic type
@@ -157,7 +157,7 @@ def analyze_TPGE(d):
 def analyze_TPAR(d):
     s, u = decode(d)
     p('element count:', u[0])
-    d = analyze_chunk(d[1*4:], ['TYPE'])
+    d = analyze_block(d[1*4:], ['TYPE'])
     assert(d == '')
 
 # type: matrix
@@ -168,7 +168,7 @@ def analyze_TPMA(d):
     p('layout(%s)' % ['column_major', 'row_major'][layout])
     p('mat%dx?' % dim)
     p(hex(u[1]))
-    d = analyze_chunk(d[2*4:], ['TPGE'])
+    d = analyze_block(d[2*4:], ['TPGE'])
     assert(d == '')
 
 # type: buffer
@@ -181,7 +181,7 @@ def analyze_TPIB(d):
     p(hex(unknown))
     p('total size:', u[1])
     p('element count:', u[2])
-    count = analyze_chunks(d[3*4:], ['TPSE'])
+    count = analyze_blocks(d[3*4:], ['TPSE'])
     assert(count == u[2])
 
 # type: struct
@@ -189,17 +189,17 @@ def analyze_TPST(d):
     s, u = decode(d)
     p('total size:', u[0])
     p('element count:', u[1])
-    d = analyze_chunk(d[2*4:], ['STRI'])
-    count = analyze_chunks(d, ['TPSE'])
+    d = analyze_block(d[2*4:], ['STRI'])
+    count = analyze_blocks(d, ['TPSE'])
     assert(count == u[1])
 
 # type: struct element
 def analyze_TPSE(d):
-    d = analyze_chunk(d, ['STRI'])
+    d = analyze_block(d, ['STRI'])
     s, u = decode(d)
     p('offset in struct:', u[0])
     p(hex(u[1]), hex(u[2])) # ???
-    d = analyze_chunk(d[3*4:], ['TYPE'])
+    d = analyze_block(d[3*4:], ['TYPE'])
     assert(d == '')
 
 def analyze_EBIN(d):
@@ -211,14 +211,14 @@ def analyze_EBIN(d):
     assert(u[3] == 0) # ???
     d = d[4*4:]
     for i in range(rloc_count):
-        d = analyze_chunk(d, ['RLOC'])
+        d = analyze_block(d, ['RLOC'])
     s, u = decode(d)
     assert(u[0] == 0xffffffff) # ???
-    d = analyze_chunk(d[1*4:], ['FSHA'])
+    d = analyze_block(d[1*4:], ['FSHA'])
     if mbs2_version == 13:
-        d = analyze_chunk(d, ['STRI'])
-    d = analyze_chunk(d, ['BFRE'])
-    d = analyze_chunk(d, ['OBJC'])
+        d = analyze_block(d, ['STRI'])
+    d = analyze_block(d, ['BFRE'])
+    d = analyze_block(d, ['OBJC'])
     assert(d == '')
 
 def analyze_OBJC(d):
@@ -241,7 +241,7 @@ def analyze_BFRE(d):
     if mbs2_version == 18:
         dump(d[:1*4])
         d = d[1*4:]
-    d = analyze_chunk(d, ['SPDc', 'SPDv', 'SPDf'])
+    d = analyze_block(d, ['SPDc', 'SPDv', 'SPDf'])
     assert(d == '')
 
 # something compute
@@ -263,13 +263,13 @@ def analyze_SPDf(d):
     assert(len(u) == 2)
 
 def analyze_KERN(d):
-    d = analyze_chunk(d, ['STRI'])
+    d = analyze_block(d, ['STRI'])
     s, u = decode(d)
     dump(d[:3*4])
     assert(u[0] == 0) # ???
     assert(u[1] == 0) # ???
     assert(u[2] == 0) # ???
-    d = analyze_chunk(d[3*4:], ['KWGS'])
+    d = analyze_block(d[3*4:], ['KWGS'])
     assert(d == '')
 
 # kernel work group size
@@ -285,12 +285,12 @@ def analyze_BATT(d):
     str_count = u[0]
     d = d[1*4:]
     for i in range(str_count):
-        d = analyze_chunk(d, ['STRI'])
+        d = analyze_block(d, ['STRI'])
         s, u = decode(d)
         dump(d[:1*4])
         d = d[1*4:]
 
-def analyze_chunk(d, expected):
+def analyze_block(d, expected):
     global indent
     assert(len(d) >= 8)
     s, u = decode(d)
@@ -309,12 +309,12 @@ def analyze_chunk(d, expected):
     indent -= 4
     return d[2*4 + length:]
 
-def analyze_chunks(d, expected):
+def analyze_blocks(d, expected):
     count = 0
     while len(d) > 0:
         count += 1
         s, u = decode(d)
-        d = analyze_chunk(d, expected)
+        d = analyze_block(d, expected)
     return count
 
 
@@ -325,7 +325,7 @@ if __name__ == '__main__':
     if path.endswith('.hex'):
         d = ''.join(d.split('\n'))
         d = unhexlify(d)
-        d = analyze_chunk(d, ['MPB1'])
+        d = analyze_block(d, ['MPB1'])
     else:
-        d = analyze_chunk(d, ['MBS2'])
+        d = analyze_block(d, ['MBS2'])
     assert(d == '')
