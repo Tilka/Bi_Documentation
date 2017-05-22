@@ -10,7 +10,7 @@ def p(*args):
     print(' ' * indent, *args)
 
 def decode(d):
-    assert(len(d) % 4 == 0)
+    assert len(d) % 4 == 0
     # list of 4-char strings
     s = [d[4*i:4*i+4] for i in range(len(d) / 4)]
     # list of unsigned 32 bit integers
@@ -28,24 +28,24 @@ def dump(d):
 def analyze_MPB1(d):
     s, u = decode(d)
     dump(d[:2*4])
-    assert(u[0] == 2) # ???
-    assert(u[1] == 0) # ???
+    assert u[0] == 2 # ???
+    assert u[1] == 0 # ???
     analyze_blocks(d[2*4:], ['COMP', 'VERT', 'FRAG', 'GEOM', 'CTRL', 'EVAL', 'BATT'])
 
 # compute shader
 def analyze_COMP(d):
     d = analyze_block(d, ['MBS2'])
-    assert(d == '')
+    assert d == ''
 
 # vertex shader
 def analyze_VERT(d):
     d = analyze_block(d, ['MBS2'])
-    assert(d == '')
+    assert d == ''
 
 # fragment shader
 def analyze_FRAG(d):
     d = analyze_block(d, ['MBS2'])
-    assert(d == '')
+    assert d == ''
 
 mbs2_version = 0
 
@@ -56,32 +56,32 @@ def analyze_MBS2(d):
     dump(d[:1*4])
     d = analyze_block(d[1*4:], ['VEHW'])
     d = analyze_block(d, ['CCOM', 'CVER', 'CFRA'])
-    assert(d == '')
+    assert d == ''
 
 # hardware version?
 def analyze_VEHW(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 3)
-    assert(u[0] == 11) # ???
-    assert(u[1] == 0) # ???
-    assert(u[2] == 0) # ???
+    assert len(u) == 3
+    assert u[0] == 11 # ???
+    assert u[1] == 0 # ???
+    assert u[2] == 0 # ???
 
 # something compute
 def analyze_CCOM(d):
     d = analyze_block(d, ['CMMN'])
     d = analyze_block(d, ['KERN'])
-    assert(d == '')
+    assert d == ''
 
 # something vertex
 def analyze_CVER(d):
     d = analyze_block(d, ['CMMN'])
-    assert(d == '')
+    assert d == ''
 
 # something fragment
 def analyze_CFRA(d):
     d = analyze_block(d, ['CMMN'])
-    assert(d == '')
+    assert d == ''
 
 def analyze_CMMN(d):
     d = analyze_block(d, ['VELA'])
@@ -91,12 +91,12 @@ def analyze_CMMN(d):
     d = analyze_block(d, ['UBUF'])
     s, u = decode(d)
     count = analyze_blocks(d[1*4:], ['EBIN'])
-    assert(count == u[0])
+    assert count == u[0]
 
 # language version
 def analyze_VELA(d):
     s, u = decode(d)
-    assert(len(u) == 1)
+    assert len(u) == 1
     lang = u[0]
     versions = {1: 100, 2: 300, 4: 310, 8: 320}
     if lang in versions:
@@ -107,7 +107,7 @@ def analyze_VELA(d):
 def analyze_SSYM(d):
     s, u = decode(d)
     count = analyze_blocks(d[1*4:], ['SYMB'])
-    assert(count == u[0])
+    assert count == u[0]
 
 # symbol
 def analyze_SYMB(d):
@@ -127,8 +127,8 @@ def analyze_SYMB(d):
     for i in range(rloc_count):
         d = analyze_block(d, ['RLOC'])
     s, u = decode(d)
-    assert(len(u) == 1)
-    assert(u[0] == 0) # ???
+    assert len(u) == 1
+    assert u[0] == 0 # ???
 
 # string
 def analyze_STRI(d):
@@ -136,13 +136,13 @@ def analyze_STRI(d):
 
 def analyze_TYPE(d):
     d = analyze_block(d, ['TPGE', 'TPMA', 'TPAR', 'TPST', 'TPIB', 'TPPO', 'TPSA', 'TPAC'])
-    assert(d == '')
+    assert d == ''
 
 # basic type
 def analyze_TPGE(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 3)
+    assert len(u) == 3
     scalar_type = u[0] & 0xff
     scalar_size = (u[0] >> 8) & 0xff
     precision = (u[0] >> 24) & 0xff
@@ -166,7 +166,7 @@ def analyze_TPGE(d):
     type_str += precisions[precision] + ' '
     type_str += types[scalar_type][scalar_size != 1]
     if scalar_size != 1:
-        assert(scalar_size >= 2)
+        assert scalar_size >= 2
         type_str += str(scalar_size)
     p(type_str)
 
@@ -175,7 +175,7 @@ def analyze_TPAR(d):
     s, u = decode(d)
     p('element count:', u[0])
     d = analyze_block(d[1*4:], ['TYPE'])
-    assert(d == '')
+    assert d == ''
 
 # type: matrix
 def analyze_TPMA(d):
@@ -186,7 +186,7 @@ def analyze_TPMA(d):
     p('mat%dx?' % dim)
     p(hex(u[1]))
     d = analyze_block(d[2*4:], ['TPGE'])
-    assert(d == '')
+    assert d == ''
 
 # type: interface block
 def analyze_TPIB(d):
@@ -196,7 +196,7 @@ def analyze_TPIB(d):
     is_global = (u[0] >> 8) & 0xff
     p('layout(%s)' % ['unknown (0)', 'unknown (1)', 'unknown (2)', 'unknown (3)',
                   'shared', 'packed', 'std140', 'std430'][layout])
-    #assert(is_global in [0, 1])
+    #assert is_global in [0, 1]
     p('total size:', u[1])
     tpse_count = u[2]
     d = d[3*4:]
@@ -204,7 +204,7 @@ def analyze_TPIB(d):
         d = analyze_block(d, ['TPSE'])
     if d != '':
         d = analyze_block(d, ['STRI'])
-    assert(d == '')
+    assert d == ''
 
 # type: struct
 def analyze_TPST(d):
@@ -213,7 +213,7 @@ def analyze_TPST(d):
     p('element count:', u[1])
     d = analyze_block(d[2*4:], ['STRI'])
     count = analyze_blocks(d, ['TPSE'])
-    assert(count == u[1])
+    assert count == u[1]
 
 # type: struct element
 def analyze_TPSE(d):
@@ -222,7 +222,7 @@ def analyze_TPSE(d):
     p('offset in struct:', u[0])
     p(hex(u[1]), hex(u[2])) # ???
     d = analyze_block(d[3*4:], ['TYPE'])
-    assert(d == '')
+    assert d == ''
 
 # type: ???
 def analyze_TPPO(d):
@@ -232,7 +232,7 @@ def analyze_TPPO(d):
 # type: sampler
 def analyze_TPSA(d):
     s, u = decode(d)
-    assert(len(u) == 1)
+    assert len(u) == 1
     sampler = u[0]
     samplers = {
         5: 'sampler2D',
@@ -295,32 +295,32 @@ def analyze_TPSA(d):
 # type: atomic counter
 def analyze_TPAC(d):
     s, u = decode(d)
-    assert(len(u) == 1)
+    assert len(u) == 1
     offset = u[0]
     p('layout(offset = %u) atomic_uint' % offset)
 
 def analyze_EBIN(d):
     s, u = decode(d)
     dump(d[:4*4])
-    assert(u[0] == 0) # ???
-    #assert(u[1] == 0xffffffff) # ???
+    assert u[0] == 0 # ???
+    #assert u[1] == 0xffffffff # ???
     rloc_count = u[2]
-    assert(u[3] == 0) # ???
+    assert u[3] == 0 # ???
     d = d[4*4:]
     for i in range(rloc_count):
         d = analyze_block(d, ['RLOC'])
     s, u = decode(d)
-    assert(u[0] == 0xffffffff) # ???
+    assert u[0] == 0xffffffff # ???
     d = analyze_block(d[1*4:], ['FSHA'])
     if mbs2_version == 13:
         d = analyze_block(d, ['STRI'])
     d = analyze_block(d, ['BFRE'])
     d = analyze_block(d, ['OBJC'])
-    assert(d == '')
+    assert d == ''
 
 def analyze_OBJC(d):
     s, u = decode(d)
-    assert(len(u) % 4 == 0)
+    assert len(u) % 4 == 0
     for i in range(len(u) // 4):
         line = []
         for j in range(4):
@@ -330,34 +330,34 @@ def analyze_OBJC(d):
 def analyze_FSHA(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 6)
-    assert(u[0] == 0) # ???
-    assert(u[1] == 0) # ???
+    assert len(u) == 6
+    assert u[0] == 0 # ???
+    assert u[1] == 0 # ???
 
 def analyze_BFRE(d):
     if mbs2_version == 18:
         dump(d[:1*4])
         d = d[1*4:]
     d = analyze_block(d, ['SPDc', 'SPDv', 'SPDf'])
-    assert(d == '')
+    assert d == ''
 
 # something compute
 def analyze_SPDc(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 1)
+    assert len(u) == 1
 
 # something vertex
 def analyze_SPDv(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 1)
+    assert len(u) == 1
 
 # something fragment
 def analyze_SPDf(d):
     s, u = decode(d)
     dump(d)
-    assert(len(u) == 2)
+    assert len(u) == 2
 
 def analyze_KERN(d):
     # name of this kernel
@@ -369,26 +369,26 @@ def analyze_KERN(d):
         d = analyze_block(d, ['KPAR'])
     s, u = decode(d)
     dump(d[:2*4])
-    assert(u[0] == 0) # ???
-    assert(u[1] == 0) # ???
+    assert u[0] == 0 # ???
+    assert u[1] == 0 # ???
     d = d[2*4:]
     # FIXME: probably not the right condition
     if kpar_count == 0:
         d = analyze_block(d, ['KWGS'])
-    assert(d == '')
+    assert d == ''
 
 # kernel parameter
 def analyze_KPAR(d):
     d = analyze_block(d, ['STRI'])
     d = analyze_block(d, ['STRI'])
     s, u = decode(d)
-    assert(len(u) == 1)
-    assert(u[0] == 1) # ???
+    assert len(u) == 1
+    assert u[0] == 1 # ???
 
 # kernel work group size
 def analyze_KWGS(d):
     s, u = decode(d)
-    assert(len(u) == 3)
+    assert len(u) == 3
     p('layout(local_size_x = %d,' % u[0])
     p('       local_size_y = %d,' % u[1])
     p('       local_size_z = %d) in;' % u[2])
@@ -406,7 +406,7 @@ def analyze_BATT(d):
 def analyze_MBSX(d):
     dump(d[0:2*4])
     d = analyze_block(d[2*4:], ['MBS2'])
-    assert(d == '')
+    assert d == ''
 
 def analyze_STRT(d):
     for line in d.split('\x00'):
@@ -414,16 +414,16 @@ def analyze_STRT(d):
 
 def analyze_block(d, expected):
     global indent
-    assert(len(d) >= 8)
+    assert len(d) >= 8
     s, u = decode(d)
     sig = s[0]
     length = u[1]
     p(sig, '(%u bytes payload)' % length)
-    assert(sig in expected)
+    assert sig in expected
     indent += 4
     if sig != 'STRT':
-        assert(length % 4 == 0)
-    assert(length + 2*4 <= len(d))
+        assert length % 4 == 0
+    assert length + 2*4 <= len(d)
     payload = d[2*4:2*4+length]
     if ('analyze_' + sig) in globals():
         eval('analyze_' + sig)(payload)
@@ -460,6 +460,6 @@ if __name__ == '__main__':
             d = analyze_block(d, ['MBSX'])
             d = analyze_block(d, ['KRNL'])
         d = analyze_block(d, ['STRT'])
-        assert(d == 'TERM\x00')
+        assert d == 'TERM\x00'
         d = ''
-    assert(d == '')
+    assert d == ''
